@@ -1,0 +1,34 @@
+name: "Generic Video Analysis"
+description: "General-purpose video understanding"
+version: "1.0.0"
+
+triggers:
+  keywords: []
+
+config:
+  fps: 1
+  agents: 5
+  focus: "generic"
+  audio_priority: "medium"
+  scene_detection: true
+
+phases:
+  - id: "extract-frames"
+    name: "Standard Frame Extraction"
+
+  - id: "extract-audio"
+    name: "Audio Transcription"
+    config:
+      model: "whisper-1"
+
+  - id: "analysis"
+    name: "General Analysis"
+    agents: 5
+    parallel: true
+    prompt_template: "generic_analyzer.md"
+
+  - id: "output"
+    name: "Generate Summary"
+    output_format: "markdown"
+
+estimated_duration: "10-20 minutes"

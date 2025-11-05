@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Test artifacts
+tests/temp/
+tests/fixtures/*_frames/
+tests/fixtures/*_audio.wav
+tests/resources/
+
+# Temporary files
+*.mp4
+*.avi
+*.mov
+*.wav
+*.mp3
+temp_result.json
+test_results.txt
+agent_*.json
+batch_*.txt
+*.log
+
+# Project temp files
+analyze_complete.py
+test_skill.py
+.env.example
+BUGS_FOUND_*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

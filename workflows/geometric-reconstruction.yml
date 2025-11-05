@@ -1,0 +1,56 @@
+name: "Geometric Reconstruction"
+description: "Analyze shapes and correlate with audio measurements"
+version: "1.0.0"
+
+triggers:
+  keywords: ["geometria", "formas", "medidas", "3D", "reconstrução", "geometry", "shapes"]
+
+config:
+  fps: 0.5
+  agents: 5
+  focus: "shapes"
+  audio_priority: "high"
+  scene_detection: true
+  audio_trigger_keywords: ["medida", "largura", "altura", "centímetros", "milímetros", "metros", "raio", "diâmetro"]
+
+phases:
+  - id: "extract-frames"
+    name: "Adaptive Frame Extraction"
+    description: "Extract frames at 0.5fps with scene detection"
+
+  - id: "extract-audio"
+    name: "Audio Transcription"
+    description: "Whisper API with word-level timestamps"
+    config:
+      model: "whisper-1"
+      timestamp_granularity: "word"
+      language: "pt"
+
+  - id: "geometric-analysis"
+    name: "Shape Analysis"
+    agents: 5
+    parallel: true
+    prompt_template: "geometry_analyzer.md"
+    focus_areas:
+      - "Shape identification"
+      - "Edge detection"
+      - "Angle measurements"
+      - "Proportions and ratios"
+      - "3D perspective"
+
+  - id: "measurement-extraction"
+    name: "Extract Audio Measurements"
+    description: "Parse measurements from transcription"
+    regex_patterns:
+      - "\\d+\\.?\\d*\\s*(cm|mm|m|metros|centímetros|milímetros)"
+      - "\\d+\\.?\\d*\\s*graus"
+
+  - id: "correlate"
+    name: "Correlate Shapes with Measurements"
+    description: "Match visual shapes with spoken measurements"
+
+  - id: "output"
+    name: "Generate 3D Model Description"
+    output_format: "json"
+
+estimated_duration: "15-30 minutes"

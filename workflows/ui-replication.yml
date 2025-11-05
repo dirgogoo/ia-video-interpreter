@@ -1,0 +1,50 @@
+name: "UI Replication"
+description: "Analyze and replicate user interfaces"
+version: "1.0.0"
+
+triggers:
+  keywords: ["UI", "interface", "botão", "formulário", "replicar", "button", "form"]
+
+config:
+  fps: 2
+  agents: 10
+  focus: "ui_elements"
+  audio_priority: "medium"
+  scene_detection: true
+  audio_trigger_keywords: ["clique", "botão", "formulário", "input", "click", "button"]
+
+phases:
+  - id: "extract-frames"
+    name: "High-FPS Frame Extraction"
+    description: "Extract frames at 2fps for UI interactions"
+
+  - id: "extract-audio"
+    name: "Audio Transcription"
+    description: "Optional audio for narrated tutorials"
+    config:
+      model: "whisper-1"
+      timestamp_granularity: "segment"
+
+  - id: "ui-analysis"
+    name: "UI Element Detection"
+    agents: 10
+    parallel: true
+    prompt_template: "ui_analyzer.md"
+    focus_areas:
+      - "Buttons and controls"
+      - "Forms and inputs"
+      - "Navigation elements"
+      - "Layout structure"
+      - "Typography and colors"
+
+  - id: "interaction-tracking"
+    name: "Track User Interactions"
+    description: "Identify clicks, typing, scrolling"
+
+  - id: "output"
+    name: "Generate UI Code"
+    output_formats:
+      - "html_css"
+      - "react_component"
+
+estimated_duration: "20-40 minutes"
