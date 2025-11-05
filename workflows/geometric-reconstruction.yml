@@ -50,7 +50,23 @@ phases:
     description: "Match visual shapes with spoken measurements"
 
   - id: "output"
-    name: "Generate 3D Model Description"
-    output_format: "json"
+    name: "Generate Semantic Geometry JSON"
+    output_format: "semantic-geometry-json"
+    description: "Construction-based CAD representation using semantic-geometry library"
+    schema: "~/semantic-geometry"
+    validation: "JSON Schema + semantic-geometry validator"
 
 estimated_duration: "15-30 minutes"
+
+output_specification:
+  format: "Semantic Geometry JSON"
+  library: "semantic-geometry (~/semantic-geometry)"
+  structure:
+    - work_plane: "Initial face (frontal, superior, lateral_*)"
+    - features: "Ordered list of construction operations"
+    - measurements: "ALL from audio with timestamps"
+    - geometry: "Visual detection only (circles, rectangles, polygons)"
+  validation_layers:
+    - JSON Schema validation
+    - Semantic geometry validator
+    - Physical constraint checking

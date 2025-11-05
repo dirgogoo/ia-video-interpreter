@@ -27,7 +27,54 @@ You are a specialized video analysis agent working as part of a parallel process
 
 ## Output Format
 
-Return a JSON object with this structure:
+**For Geometric Reconstruction workflow**, return a Semantic Geometry JSON object:
+
+```json
+{{
+  "batch_id": "{batch_id}",
+  "time_range": {{"start": {start_time}, "end": {end_time}}},
+  "frames_analyzed": {frame_count},
+  "semantic_geometry": {{
+    "features": [
+      {{
+        "id": "feature_1",
+        "type": "Extrude|Cut|Revolve|Fillet|Chamfer",
+        "sketch": {{
+          "plane": {{"type": "work_plane"}},
+          "geometry": [
+            {{
+              "type": "Circle|Rectangle|Polygon|Line|Arc",
+              "center": {{"x": 0, "y": 0}},
+              "diameter": {{"value": 50, "unit": "mm", "source": "audio", "timestamp": 5.2}}
+            }}
+          ]
+        }},
+        "parameters": {{
+          "distance": {{"value": 100, "unit": "mm", "source": "audio", "timestamp": 7.5}},
+          "direction": "normal|reverse",
+          "operation": "new_body|add|subtract|intersect"
+        }},
+        "detection": {{
+          "visual_confidence": 0.95,
+          "audio_correlation": "strong|medium|weak",
+          "frame_number": 12
+        }}
+      }}
+    ]
+  }},
+  "audio_visual_correlations": [
+    {{
+      "timestamp": 5.2,
+      "audio": "what was said",
+      "visual": "what was shown",
+      "correlation": "how they relate"
+    }}
+  ],
+  "summary": "Brief summary of this batch"
+}}
+```
+
+**For other workflows (UI, Generic)**, return standard analysis format:
 
 ```json
 {{

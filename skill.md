@@ -48,12 +48,20 @@ This skill enables Claude to "see" videos by:
 ## Workflows
 
 ### Geometric Reconstruction (`geometric-reconstruction.yml`)
-**When**: User wants to analyze shapes, measurements, 3D objects
+**When**: User wants to analyze shapes, measurements, 3D objects for CAD reconstruction
 - FPS: 0.5 (slow, detailed capture)
 - Agents: 5
 - Focus: Geometric shapes, dimensions, spatial relationships
 - Audio Priority: HIGH (measurements often spoken)
-- **Trigger Keywords**: geometry, shapes, measurements, 3D, reconstruction, formas, medidas
+- **Output Format**: **Semantic Geometry JSON** (library at `~/semantic-geometry`)
+- **Trigger Keywords**: geometry, shapes, measurements, 3D, reconstruction, formas, medidas, CAD, peça
+
+**Semantic Geometry Integration**:
+This workflow outputs construction-based CAD representation using the `semantic-geometry` library:
+- **Vision**: Detects geometry types (circles, rectangles, polygons, operations)
+- **Audio**: Provides ALL measurements with timestamps
+- **Output**: Semantic Geometry JSON validated against JSON Schema
+- **Next Steps**: JSON can be converted to STEP AP242 for CAD import
 
 ### UI Replication (`ui-replication.yml`)
 **When**: User wants to replicate user interface from video
@@ -218,29 +226,95 @@ aggregated = coordinator.aggregate_results(
 
 **Note**: Since Task tool can only be invoked by Claude (not importable in Python), Steps 3-4 happen when Claude executes the skill, not in the Python orchestrator.
 
-### Step 4: Return Results to User
+### Step 4: Validate and Return Results
 
-**Current MVP Response**:
+**For Geometric Reconstruction workflow**, validate the Semantic Geometry JSON:
+
+```python
+# Install semantic-geometry if not available
+# cd ~/semantic-geometry && pip install -e .
+
+import sys
+sys.path.insert(0, str(Path.home() / "semantic-geometry"))
+from semantic_geometry.schema import validate_part
+import json
+
+# Aggregate agent results into single Semantic Geometry JSON
+aggregated = coordinator.aggregate_results(
+    agent_results=agent_results,
+    full_transcription=result['transcription'],
+    user_task=task_description
+)
+
+# Extract semantic geometry from aggregated results
+semantic_geometry_json = {
+    "part": {
+        "name": aggregated.get("part_name", "Reconstructed Part"),
+        "units": "mm",
+        "work_plane": aggregated.get("work_plane", {"type": "primitive", "face": "frontal"}),
+        "features": aggregated.get("features", []),
+        "metadata": {
+            "source": "video-interpreter",
+            "workflow": "geometric-reconstruction",
+            "video_file": str(video_path),
+            "timestamp": result.get("timestamp")
+        }
+    }
+}
+
+# Validate using semantic-geometry library
+validation_result = validate_part(semantic_geometry_json)
+
+if validation_result.is_valid:
+    # Save to file
+    output_path = video_path.parent / f"{video_path.stem}_semantic_geometry.json"
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(semantic_geometry_json, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ Semantic Geometry JSON saved to: {output_path}")
+else:
+    print("❌ Validation errors:")
+    for error in validation_result.errors:
+        print(f"   - {error}")
 ```
-✅ Video Analysis Complete
 
-**Workflow Detected**: {workflow_name}
+**Response to User**:
+```
+✅ Video Analysis Complete - Semantic Geometry Generated
+
+**Workflow**: Geometric Reconstruction
 **Configuration**:
-- FPS: {fps}
-- Agents: {agents}
-- Focus: {focus}
+- FPS: 0.5
+- Agents: 5
+- Focus: Geometric shapes and measurements
 
-**Frames Extracted**: {len(frames)} frames
-**Audio**: Extracted to {audio_path}
-**Transcription**: {transcription['text']}
+**Results**:
+- Frames Analyzed: 25 frames
+- Features Detected: 3 operations (2 Extrude, 1 Cut)
+- Measurements Extracted: 5 dimensions from audio
+- Output: semantic_geometry.json (validated ✅)
 
-⚠️ **Note**: This is MVP implementation. Frames and audio are extracted, but full Claude agent analysis is not yet implemented.
+**Semantic Geometry Summary**:
+{
+  "part_name": "Hollow Cylinder",
+  "features": [
+    "Extrude: Circle (Ø50mm) × 100mm",
+    "Cut: Circle (Ø30mm) through-all"
+  ],
+  "work_plane": "frontal"
+}
 
-Next steps for full implementation:
-1. Implement parallel agent frame analysis
-2. Integrate audio-visual timestamp correlation
-3. Create specialized analyzer prompts (geometric, UI, generic)
+**Next Steps**:
+1. Review the generated JSON: {output_path}
+2. Validate manually: `semantic-geometry validate {output_path}`
+3. Convert to CAD format (STEP AP242) - coming soon
+
+**Audio-Visual Correlations**:
+- 5.2s: "diâmetro externo 50 milímetros" → Circle geometry detected in frame 10
+- 7.5s: "altura 10 centímetros" → Extrude distance confirmed
 ```
+
+**For other workflows (UI, Generic)**, return standard analysis as before.
 
 ## Error Handling
 
@@ -266,17 +340,47 @@ if language not in supported_languages:
 
 ## Examples
 
-### Example 1: Geometric Reconstruction
+### Example 1: Geometric Reconstruction (with Semantic Geometry output)
 ```
-User: "Analyze this geometry video and extract measurements"
-Video: geometry_tutorial.mp4
+User: "Analisar este vídeo de geometria e extrair as medidas da peça"
+Video: hollow_cylinder_tutorial.mp4 (25 seconds)
 
 Claude Response:
-✅ Video Analysis Complete
-Workflow: geometric-reconstruction
-Extracted 20 frames at 0.5 FPS
-Audio transcription: "The base measures 10 centimeters..."
-[Frame analysis results would go here in full implementation]
+✅ Video Analysis Complete - Semantic Geometry Generated
+
+**Workflow**: Geometric Reconstruction
+**Configuration**:
+- FPS: 0.5
+- Agents: 5
+- Focus: Geometric shapes and measurements
+
+**Results**:
+- Frames Analyzed: 25 frames
+- Features Detected: 2 operations (1 Extrude, 1 Cut)
+- Measurements Extracted: 3 dimensions from audio
+- Output: hollow_cylinder_tutorial_semantic_geometry.json (validated ✅)
+
+**Semantic Geometry Summary**:
+{
+  "part_name": "Hollow Cylinder",
+  "features": [
+    "Extrude: Circle (Ø50mm) × 100mm",
+    "Cut: Circle (Ø30mm) through-all"
+  ],
+  "work_plane": "frontal"
+}
+
+**Audio-Visual Correlations**:
+- 5.2s: "diâmetro externo 50 milímetros" → Circle Ø50mm (frame 7, confidence: 0.95)
+- 8.7s: "diâmetro interno 30 milímetros" → Circle Ø30mm cut (frame 9, confidence: 0.90)
+- 12.3s: "altura 10 centímetros" → Extrude distance 100mm (frame 12, confidence: 0.98)
+
+**Next Steps**:
+1. Review generated JSON: hollow_cylinder_tutorial_semantic_geometry.json
+2. Validate: semantic-geometry validate <file>
+3. Convert to CAD format (STEP AP242) - coming soon
+
+📖 Full example walkthrough: docs/EXAMPLE_GEOMETRIC_RECONSTRUCTION.md
 ```
 
 ### Example 2: UI Replication
@@ -289,11 +393,12 @@ Claude Response:
 Workflow: ui-replication
 Extracted 60 frames at 2 FPS
 Detected UI elements:
-- Email input field
-- Password input field
-- "Login" button (blue, rounded corners)
-- "Forgot password?" link
-[Detailed UI specifications would go here in full implementation]
+- Email input field (x: 320, y: 200, width: 280, height: 40)
+- Password input field (x: 320, y: 260, width: 280, height: 40)
+- "Login" button (x: 370, y: 320, blue #007bff, rounded 8px)
+- "Forgot password?" link (x: 380, y: 370, text-sm, color: #6c757d)
+
+[Component specifications in JSON format]
 ```
 
 ## Installation Requirements
