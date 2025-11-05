@@ -13,11 +13,11 @@ description: Adaptive video analysis framework with specialized workflows for UI
 
 **THIS SKILL MUST ANALYZE 100% OF EXTRACTED FRAMES - NO EXCEPTIONS**
 
-- ❌ NEVER sample frames (e.g., taking only 5 frames from a batch of 17)
-- ❌ NEVER skip frames to save tokens
-- ❌ NEVER summarize instead of analyzing all frames
-- ✅ ALWAYS pass ALL frames from each batch to agents via Read tool
-- ✅ ALWAYS validate that total frames analyzed = total frames extracted
+- [X] NEVER sample frames (e.g., taking only 5 frames from a batch of 17)
+- [X] NEVER skip frames to save tokens
+- [X] NEVER summarize instead of analyzing all frames
+- [OK] ALWAYS pass ALL frames from each batch to agents via Read tool
+- [OK] ALWAYS validate that total frames analyzed = total frames extracted
 
 **Rationale**: Video workflow documentation requires complete frame-by-frame coverage.
 Sampling loses critical transition steps, intermediate states, and user actions.
@@ -110,12 +110,12 @@ try:
 
 except ValidationError as e:
     # Handle validation errors gracefully
-    return f"❌ Validation Error: {e}"
+    return f"[ERROR] Validation Error: {e}"
 ```
 
 ### Step 3: Process Frames with Parallel Agents
 
-**✅ PRODUCTION-READY**: Claude coordinates parallel agents via Task tool.
+**[PRODUCTION-READY]**: Claude coordinates parallel agents via Task tool.
 
 **Architecture**: Hybrid approach - Python extracts frames/audio, Claude coordinates agent analysis.
 
@@ -238,6 +238,7 @@ import sys
 sys.path.insert(0, str(Path.home() / "semantic-geometry"))
 from semantic_geometry.schema import validate_part
 import json
+from datetime import datetime
 
 # Aggregate agent results into single Semantic Geometry JSON
 aggregated = coordinator.aggregate_results(
@@ -257,7 +258,9 @@ semantic_geometry_json = {
             "source": "video-interpreter",
             "workflow": "geometric-reconstruction",
             "video_file": str(video_path),
-            "timestamp": result.get("timestamp")
+            "timestamp": datetime.now().isoformat(),
+            "total_frames_analyzed": result.get("agent_analysis", {}).get("total_frames_analyzed", 0),
+            "analysis_duration": aggregated.get("duration_seconds")
         }
     }
 }
@@ -271,16 +274,16 @@ if validation_result.is_valid:
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(semantic_geometry_json, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ Semantic Geometry JSON saved to: {output_path}")
+    print(f"[OK] Semantic Geometry JSON saved to: {output_path}")
 else:
-    print("❌ Validation errors:")
+    print("[ERROR] Validation errors:")
     for error in validation_result.errors:
         print(f"   - {error}")
 ```
 
 **Response to User**:
 ```
-✅ Video Analysis Complete - Semantic Geometry Generated
+[SUCCESS] Video Analysis Complete - Semantic Geometry Generated
 
 **Workflow**: Geometric Reconstruction
 **Configuration**:
@@ -292,7 +295,7 @@ else:
 - Frames Analyzed: 25 frames
 - Features Detected: 3 operations (2 Extrude, 1 Cut)
 - Measurements Extracted: 5 dimensions from audio
-- Output: semantic_geometry.json (validated ✅)
+- Output: semantic_geometry.json (validated OK)
 
 **Semantic Geometry Summary**:
 {
@@ -323,19 +326,19 @@ The skill implements **Defense in Depth** validation:
 ```python
 # Layer 1: File validation
 if not video_path.exists():
-    return "❌ Video file not found"
+    return "[ERROR] Video file not found"
 
 # Layer 2: Input validation
 if not task_description or len(task_description) < 3:
-    return "❌ Task description required (min 3 characters)"
+    return "[ERROR] Task description required (min 3 characters)"
 
 # Layer 3: Workflow config validation
 if workflow_config['fps'] < 0.1 or workflow_config['fps'] > 10:
-    return "❌ Invalid FPS range"
+    return "[ERROR] Invalid FPS range"
 
 # Layer 4: Language validation
 if language not in supported_languages:
-    return f"❌ Unsupported language. Supported: {supported_languages}"
+    return f"[ERROR] Unsupported language. Supported: {supported_languages}"
 ```
 
 ## Examples
@@ -346,7 +349,7 @@ User: "Analisar este vídeo de geometria e extrair as medidas da peça"
 Video: hollow_cylinder_tutorial.mp4 (25 seconds)
 
 Claude Response:
-✅ Video Analysis Complete - Semantic Geometry Generated
+[SUCCESS] Video Analysis Complete - Semantic Geometry Generated
 
 **Workflow**: Geometric Reconstruction
 **Configuration**:
@@ -358,7 +361,7 @@ Claude Response:
 - Frames Analyzed: 25 frames
 - Features Detected: 2 operations (1 Extrude, 1 Cut)
 - Measurements Extracted: 3 dimensions from audio
-- Output: hollow_cylinder_tutorial_semantic_geometry.json (validated ✅)
+- Output: hollow_cylinder_tutorial_semantic_geometry.json (validated OK)
 
 **Semantic Geometry Summary**:
 {
@@ -389,7 +392,7 @@ User: "Replicate the login form from this UI demo"
 Video: login_demo.mp4
 
 Claude Response:
-✅ Video Analysis Complete
+[SUCCESS] Video Analysis Complete
 Workflow: ui-replication
 Extracted 60 frames at 2 FPS
 Detected UI elements:
@@ -423,17 +426,17 @@ Detected UI elements:
 
 ## Implementation Status
 
-### ✅ Fully Implemented (Production Ready)
+### [OK] Fully Implemented (Production Ready)
 
-- ✅ Real OpenCV frame extraction
-- ✅ Real moviepy audio extraction
-- ✅ Real Whisper API transcription with timestamps
-- ✅ Workflow loader with keyword detection
-- ✅ Defense-in-depth validation (5 layers, 50 tests passing)
-- ✅ Agent coordinator with batch division
-- ✅ Specialized prompts (geometric, UI, generic)
-- ✅ Audio-visual correlation logic
-- ✅ Result aggregation with post-processing
+- [OK] Real OpenCV frame extraction
+- [OK] Real moviepy audio extraction
+- [OK] Real Whisper API transcription with timestamps
+- [OK] Workflow loader with keyword detection
+- [OK] Defense-in-depth validation (5 layers, 50 tests passing)
+- [OK] Agent coordinator with batch division
+- [OK] Specialized prompts (geometric, UI, generic)
+- [OK] Audio-visual correlation logic
+- [OK] Result aggregation with post-processing
 
 ### 🚧 MVP with Mocks (Task Tool Integration Needed)
 
