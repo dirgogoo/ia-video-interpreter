@@ -29,6 +29,7 @@ batch_*.txt
 # Project temp files
 analyze_complete.py
 test_skill.py
+.env
 .env.example
 BUGS_FOUND_*.md
 
