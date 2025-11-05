@@ -5,15 +5,6 @@
   Analyze videos through specialized workflows (UI replication, geometric reconstruction, workflow documentation) using 5-10 parallel Claude agents
   coordinated with audio transcription.
 
-  Features:
-  • 🤖 Parallel agent coordination via Claude Task tool
-  • 🎯 Adaptive FPS extraction based on workflow intent (0.5-2 fps)
-  • 🎤 Whisper API integration for audio-visual correlation
-  • 📊 3 specialized workflows: geometric, UI, generic analysis
-  • ✅ 59/61 tests passing (96.7%) with TDD approach
-  • 🛡️ Defense-in-depth validation (5 layers)
-  • 📖 Complete documentation and integration guides
-
   Hybrid architecture: Python handles frame/audio extraction, Claude coordinates intelligent analysis across multiple agents with timestamp
   synchronization.
 
